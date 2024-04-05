@@ -12,10 +12,18 @@ License: MIT License
 
 import cv2 as cv
 
+#Settings
+resolution = [640, 480] #[Width, Height]
 fps = 20
 wait = (1/fps)*1000 #Wait in milliseconds between frames
+
+#Create camera objects and set resolution
 capR = cv.VideoCapture(0)
 capL = cv.VideoCapture(1)
+capR.set(cv.CAP_PROP_FRAME_WIDTH, resolution[0])
+capR.set(cv.CAP_PROP_FRAME_HEIGHT, resolution[1])
+capL.set(cv.CAP_PROP_FRAME_WIDTH, resolution[0])
+capL.set(cv.CAP_PROP_FRAME_HEIGHT, resolution[1])
 
 #Capture Images
 num = 0 # Index for image capture loop below
