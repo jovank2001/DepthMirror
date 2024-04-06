@@ -22,8 +22,12 @@ wait = (1/fps)*1000 #Wait in milliseconds between frames
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
 camL = Picamera2(1)
+<<<<<<< HEAD
 config = camR.create_still_configuration(raw={'format':'SRGGB8','size': resolution})
 pprint(camR.sensor_modes)
+=======
+config = camR.create_preview_configuration(raw={'format': 'SRGGB8', 'size': resolution})
+>>>>>>> e7e69b2540b0d4cb86386a6e585ee2e1da1a14db
 print(camR.preview_configuration.raw) #Verify settings
 print(camL.preview_configuration.raw) #Verify settings
 
