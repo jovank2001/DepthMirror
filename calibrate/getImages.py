@@ -33,6 +33,7 @@ camL.start()
 numPics = 5
 imageCount = 0
 
+#Get the images every 3 seconds
 while imageCount < numPics:
 
     time.sleep(3)
