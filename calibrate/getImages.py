@@ -4,7 +4,7 @@ Author: Jovan Koledin
 Email: jovank2001@gmail.com
 Github: https://github.com/jovank2001/DepthMirror
 Description: Script for saving pictures from IMX219-83 Stereo Camera Module for calibration
-Usage: Run and click 's' to save pictures with chefrom both cameras and 'q' to quit.
+Usage: Run and click 'enter' key to save pictures from both cams
 Created: April 5, 2024
 Version: 1.0
 License: MIT License
