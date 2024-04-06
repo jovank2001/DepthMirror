@@ -13,6 +13,7 @@ License: MIT License
 import cv2 as cv
 import numpy as np
 import glob
+import time
 
 #Camera Specs
 focalLength = 2.6 #mm
@@ -21,7 +22,7 @@ angleOfView = {"diagonal":83,
                "vertical":50} #Degrees
 baselineLength = 60 #Distance between cameras [mm]
 fps = 30 
-resolution = [3280, 2464] 
+res = (1000, 750)
 chessDims = (7,7)
 
 # termination criteria
@@ -34,26 +35,43 @@ objp[:,:2] = np.mgrid[0:chessDims[0],0:chessDims[1]].T.reshape(-1,2)
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
- 
-images = glob.glob('calibrate/images/leftCam/*.jpg')
- 
-for fname in images:
-    img = cv.imread(fname)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+
+for i in range(2):
+
+    if i == 0:
+        lr = 'left'
+    else:
+        lr = 'right'
     
-    # Find the chess board corners
-    ret, corners = cv.findChessboardCorners(gray, chessDims, None)
+    images = glob.glob('calibrate/images/'+lr+'Cam/*.jpg')
     
-    # If found, add object points, image points (after refining them)
-    if ret == True:
-        objpoints.append(objp)
+    for fname in images:
+        img = cv.imread(fname)
+        imgsm = cv.resize(img, res)
+        gray = cv.cvtColor(imgsm, cv.COLOR_RGB2GRAY)
+
+        cv.imshow("gray", gray)
+        cv.waitKey(0)
+        # Find the chess board corners
+        ret, corners = cv.findChessboardCorners(imgsm, chessDims,  None)
+        print(ret)
+        # If found, add object points, image points (after refining them)
+        if ret == True:
+            objpoints.append(objp)
+            
+            corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+            imgpoints.append(corners2)
+            
+            # Draw and display the corners
+            cv.drawChessboardCorners(imgsm, chessDims, corners2, ret)
+            cv.imshow('img:'+str(fname), imgsm)
+            cv.waitKey(0)
         
-        corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
-        imgpoints.append(corners2)
-        
-        # Draw and display the corners
-        cv.drawChessboardCorners(img, chessDims, corners2, ret)
-        cv.imshow('img', img)
-        cv.waitKey(500)
-    
-cv.destroyAllWindows()
+    cv.destroyAllWindows()
+
+    #Calculate camera matrix and distortion coefficient and save
+    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+    np.save('calibrate/cameraData/'+lr+'Mtx', mtx)
+    np.save('calibrate/cameraData/'+lr+'Dist', dist)
+
+
