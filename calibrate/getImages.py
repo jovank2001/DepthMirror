@@ -12,6 +12,7 @@ License: MIT License
 from picamera2 import Picamera2, Preview
 import time
 import cv2 as cv
+from pprint import *
 
 #Settings
 resolution = (1640, 1232) #(Width, Height)
@@ -21,11 +22,16 @@ wait = (1/fps)*1000 #Wait in milliseconds between frames
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
 camL = Picamera2(1)
+<<<<<<< HEAD
 config = camR.create_preview_configuration(raw={'format': 'SBGGR10', 'size': resolution})
+=======
+config = camR.create_preview_configuration(raw={'format':'SRGGB8','size': resolution})
+pprint(camR.sensor_modes)
+>>>>>>> 7b4f7fc5a3de6021a9850e28e8a8574c262f6c73
 camR.configure(config)
 camL.configure(config)
-print(camR.preview_configuration.main) #Verify settings
-print(camL.preview_configuration.main) #Verify settings
+print(camR.preview_configuration.raw) #Verify settings
+print(camL.preview_configuration.raw) #Verify settings
 
 #Capture images after key press numPics times
 camR.start(show_preview = True)
