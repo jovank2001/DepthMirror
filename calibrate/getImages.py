@@ -27,7 +27,20 @@ camL.configure(config)
 print(camR.preview_configuration.main) #Verify settings
 print(camL.preview_configuration.main) #Verify settings
 
-#Capture Images
+#Capture images after key press numPics times
+camR.start()
+camL.start()
+numPics = 5
+imageCount = 0
+
+while imageCount < numPics:
+
+    cv.waitKey()
+    camR.capture_file("imgR"+str(imageCount)+".jpg")
+    camL.capture_file("imgL"+str(imageCount)+".jpg")
+    imageCount += 1
+
+
 
 
 
