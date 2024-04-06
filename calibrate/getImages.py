@@ -22,10 +22,8 @@ wait = (1/fps)*1000 #Wait in milliseconds between frames
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
 camL = Picamera2(1)
-config = camR.create_preview_configuration(raw={'format':'SRGGB8','size': resolution})
+config = camR.create_still_configuration(raw={'format':'SRGGB8','size': resolution})
 pprint(camR.sensor_modes)
-camR.configure(config)
-camL.configure(config)
 print(camR.preview_configuration.raw) #Verify settings
 print(camL.preview_configuration.raw) #Verify settings
 
@@ -41,8 +39,8 @@ while imageCount < numPics:
     input("Click Enter to capture pics")
     fPathR = "calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
     fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
-    camR.capture_file(fPathR)
-    camL.capture_file(fPathL)
+    camR.switch_mode_and_capture_file(config, fPathR)
+    camL.switch_mode_and_capture_file(config, fPathL)
     print("Images captured")
     imageCount += 1
 
