@@ -28,15 +28,15 @@ print(camR.preview_configuration.main) #Verify settings
 print(camL.preview_configuration.main) #Verify settings
 
 #Capture images after key press numPics times
-camR.start()
-camL.start()
+camR.start(show_preview = True)
+camL.start(show_preview = True)
 numPics = 5
 imageCount = 0
 
 #Get the images every 3 seconds
 while imageCount < numPics:
 
-    time.sleep(3)
+    input("Click Enter to capture pics")
     fPathR = "calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
     fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
     camR.capture_file(fPathR)
