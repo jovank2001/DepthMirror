@@ -14,7 +14,7 @@ import time
 import cv2 as cv
 
 #Settings
-resolution = (640, 480) #(Width, Height)
+resolution = (1280, 960) #(Width, Height)
 fps = 20
 wait = (1/fps)*1000 #Wait in milliseconds between frames
 
