@@ -40,9 +40,10 @@ while imageCount < numPics:
     fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
     camR.capture_file(fPathR)
     camL.capture_file(fPathL)
+    print("Images captured")
     imageCount += 1
 
-    
+
 
 
 
