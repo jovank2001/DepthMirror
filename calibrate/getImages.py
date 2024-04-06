@@ -36,9 +36,13 @@ imageCount = 0
 while imageCount < numPics:
 
     cv.waitKey()
-    camR.capture_file("imgR"+str(imageCount)+".jpg")
-    camL.capture_file("imgL"+str(imageCount)+".jpg")
+    fPathR = "calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
+    fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
+    camR.capture_file(fPathR)
+    camL.capture_file(fPathL)
     imageCount += 1
+
+    
 
 
 
