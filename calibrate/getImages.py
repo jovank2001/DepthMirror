@@ -10,14 +10,11 @@ Version: 1.0
 License: MIT License
 """
 from picamera2 import Picamera2, Preview
-import time
 import cv2 as cv
 from pprint import *
 
 #Settings
 resolution = (640, 480) #(Width, Height)
-fps = 20
-wait = (1/fps)*1000 #Wait in milliseconds between frames
 
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
@@ -28,13 +25,12 @@ camR.configure(configR)
 camL.configure(configL)
 
 #Display settings
-pprint(camR.sensor_modes)
 print(camR.camera_configuration()) #Verify settings
 print(camL.camera_configuration()) #Verify settings
 
 #Capture images after key press numPics times
-camR.start(show_preview = True)
 camL.start(show_preview = True)
+camR.start(show_preview = True)
 numPics = 5
 imageCount = 0
 
