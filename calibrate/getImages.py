@@ -15,7 +15,7 @@ import cv2 as cv
 from pprint import *
 
 #Settings
-resolution = (1640, 1232) #(Width, Height)
+resolution = (640, 480) #(Width, Height)
 fps = 20
 wait = (1/fps)*1000 #Wait in milliseconds between frames
 
@@ -39,8 +39,8 @@ while imageCount < numPics:
     input("Click Enter to capture pics")
     fPathR = "calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
     fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
-    camR.switch_mode_and_capture_file(config, fPathR)
-    camL.switch_mode_and_capture_file(config, fPathL)
+    camR.capture_file(config, fPathR)
+    camL.capture_file(config, fPathL)
     print("Images captured")
     imageCount += 1
 
