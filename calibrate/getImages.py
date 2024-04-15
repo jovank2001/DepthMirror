@@ -42,8 +42,8 @@ imageCount = 0
 while imageCount < numPics:
 
     input("Click Enter to capture pics")
-    fPathR = "/calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
-    fPathL = "/calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
+    fPathR = "calibrate/images/rightCam/imgR"+str(imageCount)+".jpg"
+    fPathL = "calibrate/images/leftCam/imgL"+str(imageCount)+".jpg"
     camR.capture_file(fPathR)
     camL.capture_file(fPathL)
     print("Images captured")
