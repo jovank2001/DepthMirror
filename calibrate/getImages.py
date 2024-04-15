@@ -22,15 +22,15 @@ wait = (1/fps)*1000 #Wait in milliseconds between frames
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
 camL = Picamera2(1)
-configR = camR.create_preview_configuration(raw={'format':'SRGGB8','size': resolution})
-configL = camL.create_preview_configuration(raw={'format':'SRGGB8','size': resolution})
+configR = camR.create_preview_configuration({'format':'SRGGB8','size': resolution})
+configL = camL.create_preview_configuration({'format':'SRGGB8','size': resolution})
 camR.configure(configR)
 camL.configure(configL)
 
 #Display settings
 pprint(camR.sensor_modes)
-print(camR.preview_configuration.raw) #Verify settings
-print(camL.preview_configuration.raw) #Verify settings
+print(camR.camera_configuration()) #Verify settings
+print(camL.camera_configuration()) #Verify settings
 
 #Capture images after key press numPics times
 camR.start(show_preview = True)
