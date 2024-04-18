@@ -33,15 +33,15 @@ def takePics():
     #Capture images after key press numPics times
     camL.start(show_preview = True)
     camR.start(show_preview = True)
-    numPics = 30
+    numPics = 5
     imageCount = 0
 
     #Get the images every keypress
     while imageCount < numPics:
 
         input("Click Enter to capture pics")
-        fPathR = "images/rightCam/imgR"+str(imageCount)+".jpg"
-        fPathL = "images/leftCam/imgL"+str(imageCount)+".jpg"
+        fPathR = "images/rightCam/imgTestR"+str(imageCount)+".jpg"
+        fPathL = "images/leftCam/imgTestL"+str(imageCount)+".jpg"
         camR.capture_file(fPathR)
         camL.capture_file(fPathL)
         print("Images captured")
