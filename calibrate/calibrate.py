@@ -62,13 +62,13 @@ def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
             cv.waitKey(0)
 
     # Calibrate each camera
-    retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape, None, None)
-    retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape, None, None)
+    retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape[::-1], None, None)
+    retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape[::-1], None, None)
 
     # Stereo calibration
     stereoCalibrateRetval, mtxL, distL, mtxR, distR, R, T, E, F = cv.stereoCalibrate(
         objPoints, imgPointsL, imgPointsR, mtxL, distL,
-        mtxR, distR, grayL.shape,
+        mtxR, distR, grayL.shape[::-1],
         criteria=criteria, flags=cv.CALIB_FIX_INTRINSIC
     )
 
@@ -76,7 +76,7 @@ def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
     R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(
         mtxL, distL,
         mtxR, distR,
-        grayL.shape, R, T,
+        grayL.shape[::-1], R, T,
         flags=cv.CALIB_ZERO_DISPARITY, alpha=-1
     )
 

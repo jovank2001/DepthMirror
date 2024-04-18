@@ -12,6 +12,7 @@ License: MIT License
 import cv2 as cv
 import numpy as np
 import calibrate
+import matplotlib.pyplot as plt
 #import pics
 
 def loadTestImages(imagePathL, imagePathR):
@@ -38,15 +39,13 @@ def rectifyImages(imgL, imgR, params):
 
 def computeDepth(rectL, rectR, focalLength, baselineLength):
     # Create StereoBM object
-    stereo = cv.StereoBM_create(numDisparities=16, blockSize=15)
+    stereo = cv.StereoBM_create(numDisparities=48, blockSize=15)
     disparity = stereo.compute(rectL, rectR)
 
-    # Replace zero disparity with a small minimum value to avoid division by zero
-    disparity[disparity <= 0] = 0.01
-    depth = np.zeros(disparity.shape[::-1], np.float32)
-    # Calculate the depth
-    depth = focalLength * baselineLength / disparity
-    depth = cv.rotate(depth, cv.ROTATE_90_COUNTERCLOCKWISE)
+    # Handling zero disparity more appropriately
+    mask = disparity > 0
+    depth = np.zeros_like(disparity)
+    depth[mask] = focalLength * baselineLength / disparity[mask]
 
     return depth
 
@@ -61,11 +60,11 @@ def main():
     caibrationDataPath = "calibrate/cameraData/calibrationData.npz" 
     calibrationImagesPathL = "calibrate/images/leftCam/imgL*.jpg"
     calibrationImagesPathR = "calibrate/images/rightCam/imgR*.jpg"
-    testImagePathL = "calibrate/images/leftCam/imgL0.jpg"
-    testImagePathR = "calibrate/images/rightCam/imgR0.jpg"
+    testImagePathL = "calibrate/images/leftCam/testImgL0.jpg"
+    testImagePathR = "calibrate/images/rightCam/testImgR0.jpg"
 
     #Take pictures of the chessboard for calibration data generation
-    #pics.takeCalibrationPics()
+    #pics.takePics()
 
     #Generate calibration data
     #calibrate.generateCalibrationData(calibrationImagesPathL, calibrationImagesPathR, chessDims, caibrationDataPath)
@@ -78,14 +77,17 @@ def main():
 
     # Rectify images
     rectL, rectR = rectifyImages(imgL, imgR, data)
-
+    
     # Compute the disparity map
     depth = computeDepth(rectL, rectR, focalLength, baselineLength)
 
-    # Display the disparity map
-    cv.imshow('Depth Map', depth)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+    # Display the disparity map and rectified images
+    f, axarr = plt.subplots(2,2)
+    axarr[0,0].imshow(rectL)
+    axarr[0,1].imshow(rectR)
+    axarr[1,0].imshow(depth)
+    axarr[1,1].imshow(depth, cmap='plasma', norm=plt.Normalize(vmin=np.min(depth[depth > 0]), vmax=np.max(depth)))
+    plt.show()
 
 if __name__ == '__main__':
     main()

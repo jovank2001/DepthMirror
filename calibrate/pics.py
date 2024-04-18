@@ -13,7 +13,7 @@ from picamera2 import Picamera2, Preview
 import cv2 as cv
 from pprint import *
 
-def takeCalibrationPics():
+def takePics():
         
     #Settings
     resolution = (640, 480) #(Width, Height)
