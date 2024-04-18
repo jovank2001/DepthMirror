@@ -37,8 +37,8 @@ def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
         imgL = cv.imread(imgPathL)
         imgR = cv.imread(imgPathR)
 
-        grayL = cv.cvtColor(imgL, cv.COLOR_BGR2GRAY)
-        grayR = cv.cvtColor(imgR, cv.COLOR_BGR2GRAY)
+        grayL = cv.cvtColor(imgL, cv.COLOR_RGB2GRAY)
+        grayR = cv.cvtColor(imgR, cv.COLOR_RGB2GRAY)
 
         # Find the chess board corners in both images
         retL, cornersL = cv.findChessboardCorners(grayL, chessDims, None)
@@ -51,15 +51,24 @@ def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
             corners2R = cv.cornerSubPix(grayR, cornersR, (11, 11), (-1, -1), criteria)
             imgPointsL.append(corners2L)
             imgPointsR.append(corners2R)
+ 
+            # Draw and display the corners
+            cv.drawChessboardCorners(imgL, chessDims, corners2L, retL)
+            cv.imshow('imgL', imgL)
+            cv.waitKey(0)
+
+            cv.drawChessboardCorners(imgR, chessDims, corners2R, retR)
+            cv.imshow('imgR', imgR)
+            cv.waitKey(0)
 
     # Calibrate each camera
-    retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape[::-1], None, None)
-    retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape[::-1], None, None)
+    retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape, None, None)
+    retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape, None, None)
 
     # Stereo calibration
     stereoCalibrateRetval, mtxL, distL, mtxR, distR, R, T, E, F = cv.stereoCalibrate(
         objPoints, imgPointsL, imgPointsR, mtxL, distL,
-        mtxR, distR, grayL.shape[::-1],
+        mtxR, distR, grayL.shape,
         criteria=criteria, flags=cv.CALIB_FIX_INTRINSIC
     )
 
@@ -67,7 +76,7 @@ def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
     R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(
         mtxL, distL,
         mtxR, distR,
-        grayL.shape[::-1], R, T,
+        grayL.shape, R, T,
         flags=cv.CALIB_ZERO_DISPARITY, alpha=-1
     )
 

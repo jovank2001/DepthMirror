@@ -40,13 +40,13 @@ def computeDepth(rectL, rectR, focalLength, baselineLength):
     # Create StereoBM object
     stereo = cv.StereoBM_create(numDisparities=16, blockSize=15)
     disparity = stereo.compute(rectL, rectR)
-    
+
     # Replace zero disparity with a small minimum value to avoid division by zero
-    disparity[disparity == 0] = 0.1
-    depth = np.zeros(disparity.shape, np.float32)
-    
+    disparity[disparity <= 0] = 0.01
+    depth = np.zeros(disparity.shape[::-1], np.float32)
     # Calculate the depth
     depth = focalLength * baselineLength / disparity
+    depth = cv.rotate(depth, cv.ROTATE_90_COUNTERCLOCKWISE)
 
     return depth
 
@@ -61,25 +61,24 @@ def main():
     caibrationDataPath = "calibrate/cameraData/calibrationData.npz" 
     calibrationImagesPathL = "calibrate/images/leftCam/imgL*.jpg"
     calibrationImagesPathR = "calibrate/images/rightCam/imgR*.jpg"
-    testImagePathL = "calibrate/images/leftCam/testL.jpg"
-    testImagePathR = "calibrate/images/rightCam/testR.jpg"
+    testImagePathL = "calibrate/images/leftCam/imgL0.jpg"
+    testImagePathR = "calibrate/images/rightCam/imgR0.jpg"
 
     #Take pictures of the chessboard for calibration data generation
     #pics.takeCalibrationPics()
 
     #Generate calibration data
-    calibrate.generateCalibrationData(
-        calibrationImagesPathL, calibrationImagesPathR, chessDims, caibrationDataPath)
-
+    #calibrate.generateCalibrationData(calibrationImagesPathL, calibrationImagesPathR, chessDims, caibrationDataPath)
+    
     # Load saved calibration and rectification data
     data = np.load(caibrationDataPath)
     
     # Load stereo images
     imgL, imgR = loadTestImages(testImagePathL, testImagePathR)
-    
+
     # Rectify images
     rectL, rectR = rectifyImages(imgL, imgR, data)
-    
+
     # Compute the disparity map
     depth = computeDepth(rectL, rectR, focalLength, baselineLength)
 
