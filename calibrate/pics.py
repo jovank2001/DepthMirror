@@ -22,8 +22,8 @@ def takePics():
     #Create camera objects, ensure 'unpacked' data format and set resolution
     camR = Picamera2(0)
     camL = Picamera2(1)
-    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
-    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
+    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
     camR.configure(configR)
     camL.configure(configL)
 
