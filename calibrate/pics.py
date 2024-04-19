@@ -16,13 +16,14 @@ from pprint import *
 def takePics():
         
     #Settings
-    resolution = (1280, 960) #(Width, Height)
+    resolutionC = (1280, 960) #(Width, Height)
+    resolutionT = (640, 480) #(Width, Height)
 
     #Create camera objects, ensure 'unpacked' data format and set resolution
     camR = Picamera2(0)
     camL = Picamera2(1)
-    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolution})
-    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolution})
+    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
     camR.configure(configR)
     camL.configure(configL)
 
@@ -33,15 +34,15 @@ def takePics():
     #Capture images after key press numPics times
     camL.start(show_preview = True)
     camR.start(show_preview = True)
-    numPics = 15
+    numPics = 5
     imageCount = 0
 
     #Get the images every keypress
     while imageCount < numPics:
 
         input("Click Enter to capture pics")
-        fPathR = "images/rightCam/imgR"+str(imageCount)+".jpg"
-        fPathL = "images/leftCam/imgL"+str(imageCount)+".jpg"
+        fPathR = "images/rightCam/imgTR"+str(imageCount)+".jpg"
+        fPathL = "images/leftCam/imgTL"+str(imageCount)+".jpg"
         camR.capture_file(fPathR)
         camL.capture_file(fPathL)
         print("Images captured")
