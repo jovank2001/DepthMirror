@@ -22,8 +22,8 @@ def takePics():
     #Create camera objects, ensure 'unpacked' data format and set resolution
     camR = Picamera2(0)
     camL = Picamera2(1)
-    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
-    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
+    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
     camR.configure(configR)
     camL.configure(configL)
 
@@ -34,15 +34,15 @@ def takePics():
     #Capture images after key press numPics times
     camL.start(show_preview = True)
     camR.start(show_preview = True)
-    numPics = 5
+    numPics = 30
     imageCount = 0
 
     #Get the images every keypress
     while imageCount < numPics:
 
         input("Click Enter to capture pics")
-        fPathR = "images/rightCam/imgTR"+str(imageCount)+".jpg"
-        fPathL = "images/leftCam/imgTL"+str(imageCount)+".jpg"
+        fPathR = "images/rightCam/imgR"+str(imageCount)+".jpg"
+        fPathL = "images/leftCam/imgL"+str(imageCount)+".jpg"
         camR.capture_file(fPathR)
         camL.capture_file(fPathL)
         print("Images captured")

@@ -9,6 +9,7 @@ Version: 1.0
 License: MIT License
 """
 
+from picamera2 import Picamera2, Preview
 import time
 import cv2 as cv
 import numpy as np
@@ -51,6 +52,16 @@ def depthKitti():
     '''
     pass
 
+def depth(imgL, imgR, data, focalLength, baselineLength):
+
+    imgL = np.clip(imgL * .8, 0, 255).astype(np.uint8)
+    imgR = np.clip(imgR * .8, 0, 255).astype(np.uint8)
+    rectL, rectR = rectifyImages(imgL, imgR, data)
+    depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
+
+    return depth
+
+
 def computeDepthBM(rectL, rectR, focalLength, baselineLength):
     # Configure the Stereo Block Matching (SBM) algorithm
     numDisparities = 32  # Increased for better depth precision
@@ -75,12 +86,12 @@ def computeDepthBM(rectL, rectR, focalLength, baselineLength):
     disparity = stereo.compute(rectL, rectR).astype(np.float32)
 
     # Normalization of the disparity map (optional, for visualization)
-    disp_norm = cv.normalize(disparity, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+    #disp_norm = cv.normalize(disparity, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
     
     # Calculate depth map from disparity
     # Use clip to handle negative and extreme values, avoid division by zero
     with np.errstate(divide='ignore', invalid='ignore'):
-        depth = np.where(disp_norm > 0, focalLength * baselineLength / np.clip(disparity, 1, np.inf), 0)
+        depth = np.where(disparity > 0, focalLength * baselineLength / np.clip(disparity, 1, np.inf), 0)
 
     # Apply a Gaussian filter to smooth the depth map, might be better than median for preserving edges
     depth = cv.GaussianBlur(depth, (5, 5), 0)
@@ -115,10 +126,10 @@ def fill_missing_disparities(disparity_map, method='telea', radius=3):
 
 def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
     # Configure the Stereo Semi-Global Block Matching (SGBM) algorithm
-    window_size = 7
+    window_size = 5
     min_disp = 0
-    num_disp = 16*1  # Number of disparity increments
-    blockSize = 5  # Block size to match
+    num_disp = 16*2  # Number of disparity increments
+    blockSize = 9  # Block size to match
 
     # Create StereoSGBM object
     stereo = cv.StereoSGBM_create(
@@ -162,15 +173,10 @@ def main():
     calibrationDataPath = "calibrate/cameraData/calibrationData.npz" 
     calibrationImagesPathL = "calibrate/images/leftCam/imgL*.jpg"
     calibrationImagesPathR = "calibrate/images/rightCam/imgR*.jpg"
-    testImagePathL = "calibrate/images/leftCam/imgTL3.jpg"
-    testImagePathR = "calibrate/images/rightCam/imgTR3.jpg"
-    testImagePathL1 = "calibrate/images/leftCam/imgTL4.jpg"
-    testImagePathR1 = "calibrate/images/rightCam/imgTR4.jpg"
-    rectImagePathL = "images/left/rectL.jpg"
-    rectImagePathR = "images/right/rectR.jpg"
+    resolutionT = (640, 480) #(Width, Height)
 
     #Take pictures of the chessboard for calibration data generation
-    #pics.takePics()
+    pics.takePics()
 
     #Generate calibration data
     #calibrate.generateCalibrationData(calibrationImagesPathL, calibrationImagesPathR, chessDims, calibrationDataPath)
@@ -178,63 +184,31 @@ def main():
     # Load saved calibration and rectification data
     data = np.load(calibrationDataPath)
     
-    # Load stereo images
-    imgL, imgR = loadTestImages(testImagePathL, testImagePathR)
-    imgL1, imgR1 = loadTestImages(testImagePathL1, testImagePathR1)
+    #Create camera objects, ensure 'unpacked' data format and set resolution
+    camR = Picamera2(0)
+    camL = Picamera2(1)
+    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    camR.configure(configR)
+    camL.configure(configL)
 
-    #Image preprocessing
-    imgL = np.clip(imgL * .8, 0, 255).astype(np.uint8)
-    imgR = np.clip(imgR * .8, 0, 255).astype(np.uint8)
-    imgL1 = np.clip(imgL1 * .8, 0, 255).astype(np.uint8)
-    imgR1 = np.clip(imgR1 * .8, 0, 255).astype(np.uint8)
+    #Display settings
+    print(camR.camera_configuration()) #Verify settings
+    print(camL.camera_configuration()) #Verify settings
 
-    # Rectify images
-    startTime = time.time()
-    rectL, rectR = rectifyImages(imgL, imgR, data)
-    rectL1, rectR1 = rectifyImages(imgL1, imgR1, data)
-    #cv.imwrite(rectImagePathL, rectL)
-    #cv.imwrite(rectImagePathR, rectR)
-    elapsedTime = time.time() - startTime
-    print("Time to rectify: ", elapsedTime)
+    #Capture images after key press numPics times
+    camL.start(show_preview = True)
+    camR.start(show_preview = True)
 
-    #Test Epipolar lines
-    '''
-    imgLEpilines, imgREpilines = calibrate.drawEpipolarLines(rectL, rectR, data['F'])
-    # Display the images with epipolar lines
-    plt.figure(figsize=(10, 5))
-    plt.subplot(121)
-    plt.imshow(cv.cvtColor(imgLEpilines, cv.COLOR_BGR2RGB))
-    plt.title('Left Image with Epipolar Lines')
-    plt.subplot(122)
-    plt.imshow(cv.cvtColor(imgREpilines, cv.COLOR_BGR2RGB))
-    plt.title('Right Image with Epipolar Lines')
-    plt.show()
-    '''
-    # Compute the disparity map
-    startTime = time.time()
-    # depth = computeDepth(rectL, rectR, focalLength, baselineLength)
-    depthS = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
-    depthS1 = computeDepthSGBM(rectL1, rectR1, focalLength, baselineLength)
-    elapsedTime = time.time() - startTime
-    print("Time to compute depth: ", elapsedTime)
-
-    # Display the disparity map and rectified images
-    f, plot = plt.subplots(2,2, figsize=(10, 5))
-
-    plot[0][0].imshow(cv.rotate(imgL, cv.ROTATE_180), cmap = 'gray')
-    plot[0][0].set_title("Original left 0")
-    plot[0][0].axis('Off')
-    plot[0][1].imshow(cv.rotate(imgL1, cv.ROTATE_180), cmap = 'gray')
-    plot[0][1].set_title("Original left 1")
-    plot[0][1].axis('Off')
-    plot[1][0].imshow(cv.rotate(depthS, cv.ROTATE_180), cmap = 'viridis')
-    plot[1][0].set_title("Depth map from SGBM 0")
-    plot[1][0].axis('Off')
-    plot[1][1].imshow(cv.rotate(depthS1, cv.ROTATE_180), cmap='viridis')
-    plot[1][1].set_title("Depth map from SGBM 1")
-    plot[1][1].axis('Off')
-    plt.show()
-
-
+    #Display Depth map
+    frameCount = 0
+    while True:
+        frameR = camR.capture_array('main')
+        frameL = camL.capture_array('main')
+        depth = depth(frameL, frameR, data, focalLength, baselineLength)
+        cv.imshow("Depth frame:" + frameCount, depth)
+        if cv.waitKey(1) == ord('q'):  # press 'q' to quit
+                break
+        
 if __name__ == '__main__':
     main()
