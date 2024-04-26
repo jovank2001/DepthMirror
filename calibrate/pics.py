@@ -16,14 +16,14 @@ from pprint import *
 def takePics():
         
     #Settings
-    resolutionC = (1280, 960) #(Width, Height)
+    resolutionC = (1680, 1240) #(Width, Height)
     resolutionT = (640, 480) #(Width, Height)
 
     #Create camera objects, ensure 'unpacked' data format and set resolution
     camR = Picamera2(0)
     camL = Picamera2(1)
-    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
-    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
+    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
     camR.configure(configR)
     camL.configure(configL)
 
