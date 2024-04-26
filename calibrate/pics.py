@@ -34,7 +34,7 @@ def takePics():
     #Capture images after key press numPics times
     camL.start(show_preview = True)
     camR.start(show_preview = True)
-    numPics = 30
+    numPics = 15
     imageCount = 0
 
     #Get the images every keypress
