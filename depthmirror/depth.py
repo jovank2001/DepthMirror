@@ -13,8 +13,6 @@ from picamera2 import Picamera2, Preview
 import time
 import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
-import pics
 import threading
 import queue
 
@@ -43,8 +41,8 @@ def rectifyImages(imgL, imgR, params):
 
 def depth(imgL, imgR, data, focalLength, baselineLength):
 
-    imgL = np.clip(imgL * .8, 0, 255).astype(np.uint8)
-    imgR = np.clip(imgR * .8, 0, 255).astype(np.uint8)
+    imgL = (imgL * .8).astype(np.uint8)
+    imgR = (imgR * .8).astype(np.uint8)
     rectL, rectR = rectifyImages(imgL, imgR, data)
     depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
 
@@ -77,15 +75,16 @@ def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
     disparity = (disparity / 16.0) - min_disp / 16
 
     # Normalize the disparity map for visualization (optional)
-    disp_norm = cv.normalize(disparity, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+    #depth_norm = cv.normalize(depth, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
     
     # Calculate depth map from disparity
     with np.errstate(divide='ignore', invalid='ignore'):
-        depth = np.where(disp_norm > 0, (focalLength * baselineLength) / np.clip(disparity, 1, np.inf), 0)
+        depth = np.where(disparity > 0, (focalLength * baselineLength) / np.clip(disparity, 1, np.inf), 0)
 
     # Optional: Apply a Gaussian filter to smooth the depth map
     depth = cv.GaussianBlur(depth, (5, 5), 0)
-
+    depth_norm = cv.normalize(depth, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+ 
     return depth
 
 def initialize_cameras(resolution=(640, 480)):
@@ -95,8 +94,8 @@ def initialize_cameras(resolution=(640, 480)):
     config = {'format': 'SRGGB8', 'size': resolution}
     camR.configure(camR.create_preview_configuration(raw=config))
     camL.configure(camL.create_preview_configuration(raw=config))
-    camR.start(show_preview=True)
-    camL.start(show_preview=True)
+    camR.start(show_preview=False)
+    camL.start(show_preview=False)
     return camR, camL
 
 def compute_fps(last_time):
@@ -108,8 +107,8 @@ def compute_fps(last_time):
 def capture_frames(camR, camL, frame_queue):
     """ Captures frames from cameras and puts them into a queue. """
     while not stop_event.is_set():
-        frameR = camR.capture_array('main')
-        frameL = camL.capture_array('main')
+        frameR = cv.cvtColor(camR.capture_array('main'), cv.COLOR_BGR2GRAY)
+        frameL = cv.cvtColor(camL.capture_array('main'), cv.COLOR_BGR2GRAY)
         frame_queue.put((frameR, frameL))
 
 def process_depth(frame_queue, data, focalLength, baselineLength):
@@ -120,7 +119,7 @@ def process_depth(frame_queue, data, focalLength, baselineLength):
             frameR, frameL = frame_queue.get(timeout=1)
             depth_map = depth(frameL, frameR, data, focalLength, baselineLength)
             last_time, fps = compute_fps(last_time)
-            cv.putText(depth_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv.LINE_AA)
+            cv.putText(depth_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
             cv.imshow("Depth Map", depth_map)
             if cv.waitKey(1) == ord('q'):
                 stop_event.set()
