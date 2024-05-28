@@ -45,7 +45,7 @@ def depth(imgL, imgR, data, focalLength, baselineLength):
     imgR = (imgR * .8).astype(np.uint8)
     rectL, rectR = rectifyImages(imgL, imgR, data)
     depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
-
+    print(depth.shape)
     return depth
 
 def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
@@ -84,7 +84,7 @@ def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
     # Optional: Apply a Gaussian filter to smooth the depth map
     depth = cv.GaussianBlur(depth, (5, 5), 0)
     depth_norm = cv.normalize(depth, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
- 
+    
     return depth
 
 def initialize_cameras(resolution=(640, 480)):
@@ -137,7 +137,7 @@ def main():
     data = np.load(calibrationDataPath, allow_pickle=True)
 
     camR, camL = initialize_cameras()
-    cv.namedWindow("Depth Map")
+    #cv.namedWindow("Depth Map")
 
     # Create threads for capturing and processing
     capture_thread = threading.Thread(target=capture_frames, args=(camR, camL, frame_queue))
