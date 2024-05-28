@@ -45,7 +45,6 @@ def depth(imgL, imgR, data, focalLength, baselineLength):
     imgR = (imgR * .8).astype(np.uint8)
     rectL, rectR = rectifyImages(imgL, imgR, data)
     depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
-    print(depth.shape)
     return depth
 
 def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
