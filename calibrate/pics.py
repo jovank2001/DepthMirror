@@ -13,40 +13,39 @@ from picamera2 import Picamera2, Preview
 import cv2 as cv
 from pprint import *
 
-def takePics():
         
-    #Settings
-    resolutionC = (1680, 1240) #(Width, Height)
-    resolutionT = (640, 480) #(Width, Height)
+#Settings
+resolutionC = (1680, 1240) #(Width, Height)
+resolutionT = (640, 480) #(Width, Height)
+  
+#Create camera objects, ensure 'unpacked' data format and set resolution
+camR = Picamera2(0)
+camL = Picamera2(1)
+configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+camR.configure(configR)
+camL.configure(configL)
 
-    #Create camera objects, ensure 'unpacked' data format and set resolution
-    camR = Picamera2(0)
-    camL = Picamera2(1)
-    configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
-    configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionC})
-    camR.configure(configR)
-    camL.configure(configL)
+#Display set
+print(camR.camera_configuration()) #Verify settings
+print(camL.camera_configuration()) #Verify settings
 
-    #Display settings
-    print(camR.camera_configuration()) #Verify settings
-    print(camL.camera_configuration()) #Verify settings
+#Capture images after key press numPics times
+camL.start(show_preview = False)
+camR.start(show_preview = False)
+numPics = 15
+imageCount = 0
 
-    #Capture images after key press numPics times
-    camL.start(show_preview = True)
-    camR.start(show_preview = True)
-    numPics = 15
-    imageCount = 0
+#Get the images every keypress
+while imageCount < numPics:
 
-    #Get the images every keypress
-    while imageCount < numPics:
-
-        input("Click Enter to capture pics")
-        fPathR = "images/rightCam/imgR"+str(imageCount)+".jpg"
-        fPathL = "images/leftCam/imgL"+str(imageCount)+".jpg"
-        camR.capture_file(fPathR)
-        camL.capture_file(fPathL)
-        print("Images captured")
-        imageCount += 1
+    input("Click Enter to capture pics")
+    fPathR = "images/right/imgR"+str(imageCount)+".jpg"
+    fPathL = "images/left/imgL"+str(imageCount)+".jpg"
+    camR.capture_file(fPathR)
+    camL.capture_file(fPathL)
+    print("Images captured")
+    imageCount += 1
 
 
 
