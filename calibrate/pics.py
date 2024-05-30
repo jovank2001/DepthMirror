@@ -44,6 +44,11 @@ while imageCount < numPics:
     fPathL = "images/left/imgL"+str(imageCount)+".jpg"
     camR.capture_file(fPathR)
     camL.capture_file(fPathL)
+    imgR = cv.imread(fPathR)
+    imgL = cv.imread(fPathL)
+    cv.imshow("Right", imgR)
+    cv.imshow("Left", imgL)
+    cv.waitKey(0)
     print("Images captured")
     imageCount += 1
 
