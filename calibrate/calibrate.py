@@ -14,99 +14,101 @@ import cv2 as cv
 import numpy as np
 import glob
 
-def generateCalibrationData(imagesPathL, imagesPathR, chessDims, saveDataPath):
-    # Termination criteria for corner refinement
-    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+imagesPathL = "calibrate/images/left/imgL*.jpg"
+imagesPathR = "calibrate/images/right/imgR*.jpg"
+chessDims = (9, 6)
+saveDataPath = "calibrate/cameraData/calibrationData.npz"
 
-    # Object points array, with zero coordinates for z since the checkerboard is flat
-    objp = np.zeros((chessDims[0] * chessDims[1], 3), np.float32)
-    objp[:, :2] = np.mgrid[0:chessDims[0], 0:chessDims[1]].T.reshape(-1, 2)
+# Termination criteria for corner refinement
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    # Arrays to store object points and image points for both cameras
-    objPoints = []  # 3D points in real world space
-    imgPointsL = []  # 2D points in image plane from left camera
-    imgPointsR = []  # 2D points in image plane from right camera
+# Object points array, with zero coordinates for z since the checkerboard is flat
+objp = np.zeros((chessDims[0] * chessDims[1], 3), np.float32)
+objp[:, :2] = np.mgrid[0:chessDims[0], 0:chessDims[1]].T.reshape(-1, 2)
 
-    # Collect images from both directories
-    imagesL = sorted(glob.glob(imagesPathL))
-    imagesR = sorted(glob.glob(imagesPathR))
+# Arrays to store object points and image points for both cameras
+objPoints = []  # 3D points in real world space
+imgPointsL = []  # 2D points in image plane from left camera
+imgPointsR = []  # 2D points in image plane from right camera
 
-    assert len(imagesL) == len(imagesR), "Mismatch in number of left and right images."
+# Collect images from both directories
+imagesL = sorted(glob.glob(imagesPathL))
 
-    for imgPathL, imgPathR in zip(imagesL, imagesR):
-        imgL = cv.imread(imgPathL)
-        imgR = cv.imread(imgPathR)
+imagesR = sorted(glob.glob(imagesPathR))
+assert len(imagesL) == len(imagesR), "Mismatch in number of left and right images."
 
-        grayL = cv.cvtColor(imgL, cv.COLOR_RGB2GRAY)
-        grayR = cv.cvtColor(imgR, cv.COLOR_RGB2GRAY)
+for imgPathL, imgPathR in zip(imagesL, imagesR):
 
-        # Find the chess board corners in both images
-        retL, cornersL = cv.findChessboardCorners(grayL, chessDims, None)
-        retR, cornersR = cv.findChessboardCorners(grayR, chessDims, None)
+    imgL = cv.imread(imgPathL)
+    imgR = cv.imread(imgPathR)
 
-        # If found in both images, add object points and image points
-        if retL and retR:
-            objPoints.append(objp)
-            corners2L = cv.cornerSubPix(grayL, cornersL, (11, 11), (-1, -1), criteria)
-            corners2R = cv.cornerSubPix(grayR, cornersR, (11, 11), (-1, -1), criteria)
-            imgPointsL.append(corners2L)
-            imgPointsR.append(corners2R)
- 
-            # Draw and display the corners            
-            cv.drawChessboardCorners(imgL, chessDims, corners2L, retL)
-            cv.imshow('imgL', imgL)
-            cv.waitKey(0)
+    grayL = cv.cvtColor(imgL, cv.COLOR_RGB2GRAY)
+    grayR = cv.cvtColor(imgR, cv.COLOR_RGB2GRAY)
 
-            cv.drawChessboardCorners(imgR, chessDims, corners2R, retR)
-            cv.imshow('imgR', imgR)
-            cv.waitKey(0)
-            
-        if not retL or not retR:
-            print(f"Chessboard corners not detected in pair ({imgPathL}, {imgPathR}). Skipping...")
-            continue  # Skip this pair of images
+    # Find the chess board corners in both images
+    retL, cornersL = cv.findChessboardCorners(grayL, chessDims, None)
+    retR, cornersR = cv.findChessboardCorners(grayR, chessDims, None)
 
-    # Calibrate each camera
-    retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape[::-1], None, None)
-    retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape[::-1], None, None)
+    # If found in both images, add object points and image points
+    if retL and retR:
+        objPoints.append(objp)
+        corners2L = cv.cornerSubPix(grayL, cornersL, (11, 11), (-1, -1), criteria)
+        corners2R = cv.cornerSubPix(grayR, cornersR, (11, 11), (-1, -1), criteria)
+        imgPointsL.append(corners2L)
+        imgPointsR.append(corners2R)
 
-    # Stereo calibration
-    stereoCalibrateRetval, mtxL, distL, mtxR, distR, R, T, E, F = cv.stereoCalibrate(
-        objPoints, imgPointsL, imgPointsR, mtxL, distL,
-        mtxR, distR, grayL.shape[::-1],
-        criteria=criteria, flags=cv.CALIB_FIX_INTRINSIC
-    )
+        # Draw and display the corners            
+        cv.drawChessboardCorners(imgL, chessDims, corners2L, retL)
+        cv.imshow('imgL', imgL)
+        cv.waitKey(0)
+        cv.drawChessboardCorners(imgR, chessDims, corners2R, retR)
+        cv.imshow('imgR', imgR)
+        cv.waitKey(0)
+        
+    if not retL or not retR:
+        print(f"Chessboard corners not detected in pair ({imgPathL}, {imgPathR}). Skipping...")
+        continue  # Skip this pair of images
 
-    # After calibration, calculate re-projection errors to assess the quality
-    mean_errorL = 0
-    for i in range(len(objPoints)):
-        imgpoints2, _ = cv.projectPoints(objPoints[i], rvecsL[i], tvecsL[i], mtxL, distL)
-        error = cv.norm(imgPointsL[i], imgpoints2, cv.NORM_L2) / len(imgpoints2)
-        mean_errorL += error
-    mean_errorL /= len(objPoints)
-    print(f"Mean Re-projection Error, Left Camera: {mean_errorL}")
+# Calibrate each camera
+retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objPoints, imgPointsL, grayL.shape[::-1], None, None)
+retR, mtxR, distR, rvecsR, tvecsR = cv.calibrateCamera(objPoints, imgPointsR, grayR.shape[::-1], None, None)
 
-    mean_errorR = 0
-    for i in range(len(objPoints)):
-        imgpoints2, _ = cv.projectPoints(objPoints[i], rvecsR[i], tvecsR[i], mtxR, distR)
-        error = cv.norm(imgPointsR[i], imgpoints2, cv.NORM_L2) / len(imgpoints2)
-        mean_errorR += error
-    mean_errorR /= len(objPoints)
-    print(f"Mean Re-projection Error, Right Camera: {mean_errorR}")
+# Stereo calibration
+stereoCalibrateRetval, mtxL, distL, mtxR, distR, R, T, E, F = cv.stereoCalibrate(
+    objPoints, imgPointsL, imgPointsR, mtxL, distL,
+    mtxR, distR, grayL.shape[::-1],
+    criteria=criteria, flags=cv.CALIB_FIX_INTRINSIC
+)
 
-    # Stereo Rectification
-    R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(
-        mtxL, distL,
-        mtxR, distR,
-        grayL.shape[::-1], R, T,
-        flags=cv.CALIB_ZERO_DISPARITY, alpha=0
-    )
+# After calibration, calculate re-projection errors to assess the quality
+mean_errorL = 0
+for i in range(len(objPoints)):
+    imgpoints2, _ = cv.projectPoints(objPoints[i], rvecsL[i], tvecsL[i], mtxL, distL)
+    error = cv.norm(imgPointsL[i], imgpoints2, cv.NORM_L2) / len(imgpoints2)
+    mean_errorL += error
+mean_errorL /= len(objPoints)
+print(f"Mean Re-projection Error, Left Camera: {mean_errorL}")
+mean_errorR = 0
+for i in range(len(objPoints)):
+    imgpoints2, _ = cv.projectPoints(objPoints[i], rvecsR[i], tvecsR[i], mtxR, distR)
+    error = cv.norm(imgPointsR[i], imgpoints2, cv.NORM_L2) / len(imgpoints2)
+    mean_errorR += error
+mean_errorR /= len(objPoints)
+print(f"Mean Re-projection Error, Right Camera: {mean_errorR}")
 
-    # Save the calibration and rectification data
-    np.savez(saveDataPath, mtxL=mtxL, distL=distL,
-             mtxR=mtxR, distR=distR,
-             R1=R1, R2=R2, P1=P1, P2=P2, Q=Q, roi1=roi1, roi2=roi2, F=F)
+# Stereo Rectification
+R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(
+    mtxL, distL,
+    mtxR, distR,
+    grayL.shape[::-1], R, T,
+    flags=cv.CALIB_ZERO_DISPARITY, alpha=0
+)
 
-    print("Calibration and rectification data saved to", saveDataPath)
+# Save the calibration and rectification data
+np.savez(saveDataPath, mtxL=mtxL, distL=distL,
+         mtxR=mtxR, distR=distR,
+         R1=R1, R2=R2, P1=P1, P2=P2, Q=Q, roi1=roi1, roi2=roi2, F=F)
+print("Calibration and rectification data saved to", saveDataPath)
 
 def drawEpipolarLines(img1, img2, F):
     '''
