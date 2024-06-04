@@ -18,48 +18,38 @@ import queue
 
 
 def loadTestImages(imagePathL, imagePathR):
-    # Load uncalibrated stereo images
     imgL = cv.imread(imagePathL, cv.IMREAD_GRAYSCALE)
     imgR = cv.imread(imagePathR, cv.IMREAD_GRAYSCALE)
     return imgL, imgR
 
 def rectifyImages(imgL, imgR, params):
-    # Unpack parameters
     R1, R2, P1, P2, Q = params['R1'], params['R2'], params['P1'], params['P2'], params['Q']
-
-    # Compute the rectification transformation maps
-    map1L, map2L = cv.initUndistortRectifyMap(
-        params['mtxL'], params['distL'], R1, P1, imgL.shape[::-1], cv.CV_16SC2)
-    map1R, map2R = cv.initUndistortRectifyMap(
-        params['mtxR'], params['distR'], R2, P2, imgR.shape[::-1], cv.CV_16SC2)
-
-    # Remap the images using the rectification maps
+    map1L, map2L = cv.initUndistortRectifyMap(params['mtxL'], params['distL'], R1, P1, imgL.shape[::-1], cv.CV_16SC2)
+    map1R, map2R = cv.initUndistortRectifyMap(params['mtxR'], params['distR'], R2, P2, imgR.shape[::-1], cv.CV_16SC2)
     rectL = cv.remap(imgL, map1L, map2L, cv.INTER_LINEAR)
     rectR = cv.remap(imgR, map1R, map2R, cv.INTER_LINEAR)
-
     return rectL, rectR
 
 def depth(imgL, imgR, data, focalLength, baselineLength):
-
     imgL = (imgL * .8).astype(np.uint8)
     imgR = (imgR * .8).astype(np.uint8)
     rectL, rectR = rectifyImages(imgL, imgR, data)
+    #cv.imshow("Rectified Left", rectL)
+    #cv.imshow("Rectified Right", rectR)
     depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
     return depth
 
 def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
-    # Configure the Stereo Semi-Global Block Matching (SGBM) algorithm
     window_size = 5
     min_disp = 0
-    num_disp = 16*2  # Number of disparity increments
-    blockSize = 9  # Block size to match
+    num_disp = 16*4  # Increase this value for larger scenes
+    blockSize = 9
 
-    # Create StereoSGBM object
     stereo = cv.StereoSGBM_create(
         minDisparity=min_disp,
         numDisparities=num_disp,
         blockSize=blockSize,
-        P1=8 * 1 * window_size**2,  # Parameters controlling the disparity smoothness.
+        P1=8 * 1 * window_size**2,
         P2=32 * 1 * window_size**2,
         disp12MaxDiff=1,
         uniquenessRatio=15,
@@ -69,25 +59,20 @@ def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
         mode=cv.STEREO_SGBM_MODE_SGBM_3WAY
     )
 
-    # Compute disparity map
     disparity = stereo.compute(rectL, rectR).astype(np.float32)
     disparity = (disparity / 16.0) - min_disp / 16
+    cv.imshow("Disparity", disparity / num_disp)  # Visualize raw disparity map
 
-    # Normalize the disparity map for visualization (optional)
-    #depth_norm = cv.normalize(depth, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
-    
-    # Calculate depth map from disparity
     with np.errstate(divide='ignore', invalid='ignore'):
         depth = np.where(disparity > 0, (focalLength * baselineLength) / np.clip(disparity, 1, np.inf), 0)
-
-    # Optional: Apply a Gaussian filter to smooth the depth map
+    
+    depth = np.clip(depth, 0, 5000)  # Clip depth values to a reasonable range
     depth = cv.GaussianBlur(depth, (5, 5), 0)
     depth_norm = cv.normalize(depth, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
     
-    return depth
+    return depth_norm
 
 def initialize_cameras(resolution=(640, 480)):
-    """ Initializes and configures two camera instances. """
     camR = Picamera2(0)
     camL = Picamera2(1)
     config = {'format': 'SRGGB8', 'size': resolution}
@@ -98,28 +83,30 @@ def initialize_cameras(resolution=(640, 480)):
     return camR, camL
 
 def compute_fps(last_time):
-    """ Computes the current frames per second. """
     current_time = time.time()
     fps = 1 / (current_time - last_time) if last_time else 0
     return current_time, fps
 
 def capture_frames(camR, camL, frame_queue):
-    """ Captures frames from cameras and puts them into a queue. """
     while not stop_event.is_set():
         frameR = cv.cvtColor(camR.capture_array('main'), cv.COLOR_BGR2GRAY)
         frameL = cv.cvtColor(camL.capture_array('main'), cv.COLOR_BGR2GRAY)
         frame_queue.put((frameR, frameL))
 
+def apply_heatmap(depth_map):
+    heatmap = cv.applyColorMap(depth_map, cv.COLORMAP_JET)
+    return heatmap
+
 def process_depth(frame_queue, data, focalLength, baselineLength):
-    """ Processes frames from the queue to compute the depth map. """
     last_time = 0
     while not stop_event.is_set() or not frame_queue.empty():
         try:
             frameR, frameL = frame_queue.get(timeout=1)
             depth_map = depth(frameL, frameR, data, focalLength, baselineLength)
+            heat_map = apply_heatmap(depth_map)
             last_time, fps = compute_fps(last_time)
-            cv.putText(depth_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv.LINE_AA)
-            cv.imshow("Depth Map", depth_map)
+            cv.putText(heat_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 4, cv.LINE_AA)
+            cv.imshow("Depth Map", heat_map)
             if cv.waitKey(1) == ord('q'):
                 stop_event.set()
         except queue.Empty:
@@ -136,13 +123,10 @@ def main():
     data = np.load(calibrationDataPath, allow_pickle=True)
 
     camR, camL = initialize_cameras()
-    #cv.namedWindow("Depth Map")
 
-    # Create threads for capturing and processing
     capture_thread = threading.Thread(target=capture_frames, args=(camR, camL, frame_queue))
     process_thread = threading.Thread(target=process_depth, args=(frame_queue, data, focalLength, baselineLength))
 
-    # Start threads
     capture_thread.start()
     process_thread.start()
 

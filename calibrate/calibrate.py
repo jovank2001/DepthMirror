@@ -88,6 +88,7 @@ for i in range(len(objPoints)):
     mean_errorL += error
 mean_errorL /= len(objPoints)
 print(f"Mean Re-projection Error, Left Camera: {mean_errorL}")
+
 mean_errorR = 0
 for i in range(len(objPoints)):
     imgpoints2, _ = cv.projectPoints(objPoints[i], rvecsR[i], tvecsR[i], mtxR, distR)
