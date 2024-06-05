@@ -16,7 +16,7 @@ import glob
 
 imagesPathL = "calibrate/images/left/imgL*.jpg"
 imagesPathR = "calibrate/images/right/imgR*.jpg"
-chessDims = (9, 6)
+chessDims = (9, 7)
 saveDataPath = "calibrate/cameraData/calibrationData.npz"
 
 # Termination criteria for corner refinement
