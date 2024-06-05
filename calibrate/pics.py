@@ -39,8 +39,8 @@ imageCount = 0
 #Get the images every keypress
 while imageCount < numPics:
 
-    fPathR = "images/right/imgR"+str(imageCount)+".jpg"
-    fPathL = "images/left/imgL"+str(imageCount)+".jpg"
+    fPathR = "calibrate/images/right/imgR"+str(imageCount)+".jpg"
+    fPathL = "calibrate/images/left/imgL"+str(imageCount)+".jpg"
     count = 0
 
     while count < 5:
