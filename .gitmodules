@@ -1,0 +1,3 @@
+[submodule "models/PyTorch-High-Res-Stereo-Depth-Estimation"]
+	path = models/PyTorch-High-Res-Stereo-Depth-Estimation
+	url = https://github.com/ibaiGorordo/PyTorch-High-Res-Stereo-Depth-Estimation.git
