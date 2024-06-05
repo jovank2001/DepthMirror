@@ -21,8 +21,8 @@ resolutionT = (640, 480) #(Width, Height)
 #Create camera objects, ensure 'unpacked' data format and set resolution
 camR = Picamera2(0)
 camL = Picamera2(1)
-configR = camR.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
-configL = camL.create_preview_configuration(raw={'format':'SRGGB8', 'size':resolutionT})
+configR = camR.create_preview_configuration(raw={'format':'SBGGR16', 'size':resolutionC})
+configL = camL.create_preview_configuration(raw={'format':'SBGGR16', 'size':resolutionC})
 camR.configure(configR)
 camL.configure(configL)
 
@@ -39,16 +39,20 @@ imageCount = 0
 #Get the images every keypress
 while imageCount < numPics:
 
-    input("Click Enter to capture pics")
     fPathR = "images/right/imgR"+str(imageCount)+".jpg"
     fPathL = "images/left/imgL"+str(imageCount)+".jpg"
-    camR.capture_file(fPathR)
-    camL.capture_file(fPathL)
-    imgR = cv.imread(fPathR)
-    imgL = cv.imread(fPathL)
-    cv.imshow("Right", imgR)
-    cv.imshow("Left", imgL)
-    cv.waitKey(0)
+    count = 0
+
+    while count < 5:
+        imgR = camR.capture_array('main')
+        imgL = camL.capture_array('main')
+        cv.imshow("Right", imgR)
+        cv.imshow("Left", imgL)
+        count = count + 1
+        cv.waitKey(0)
+        
+    cv.imwrite(fPathR, imgR)
+    cv.imwrite(fPathL, imgL)
     print("Images captured")
     imageCount += 1
 

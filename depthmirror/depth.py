@@ -31,19 +31,19 @@ def rectifyImages(imgL, imgR, params):
     return rectL, rectR
 
 def depth(imgL, imgR, data, focalLength, baselineLength):
-    imgL = (imgL * .8).astype(np.uint8)
-    imgR = (imgR * .8).astype(np.uint8)
+    #imgL = (imgL * .8).astype(np.uint8)
+    #imgR = (imgR * .8).astype(np.uint8)
     rectL, rectR = rectifyImages(imgL, imgR, data)
-    #cv.imshow("Rectified Left", rectL)
-    #cv.imshow("Rectified Right", rectR)
+    cv.imshow("Rectified Left", rectL)
+    cv.imshow("Rectified Right", rectR)
     depth = computeDepthSGBM(rectL, rectR, focalLength, baselineLength)
     return depth
 
 def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
     window_size = 5
-    min_disp = 0
-    num_disp = 16*4  # Increase this value for larger scenes
-    blockSize = 9
+    min_disp = 5
+    num_disp = 16*3  # Increase this value for larger scenes
+    blockSize = 5
 
     stereo = cv.StereoSGBM_create(
         minDisparity=min_disp,
@@ -53,15 +53,15 @@ def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
         P2=32 * 1 * window_size**2,
         disp12MaxDiff=1,
         uniquenessRatio=15,
-        speckleWindowSize=0,
-        speckleRange=2,
+        speckleWindowSize=50,
+        speckleRange=10,
         preFilterCap=63,
         mode=cv.STEREO_SGBM_MODE_SGBM_3WAY
     )
 
     disparity = stereo.compute(rectL, rectR).astype(np.float32)
     disparity = (disparity / 16.0) - min_disp / 16
-    cv.imshow("Disparity", disparity / num_disp)  # Visualize raw disparity map
+    #cv.imshow("Disparity", disparity / num_disp)  # Visualize raw disparity map
 
     with np.errstate(divide='ignore', invalid='ignore'):
         depth = np.where(disparity > 0, (focalLength * baselineLength) / np.clip(disparity, 1, np.inf), 0)
@@ -75,7 +75,7 @@ def computeDepthSGBM(rectL, rectR, focalLength, baselineLength):
 def initialize_cameras(resolution=(640, 480)):
     camR = Picamera2(0)
     camL = Picamera2(1)
-    config = {'format': 'SRGGB8', 'size': resolution}
+    config = {'format': 'SBGGR16', 'size': resolution}
     camR.configure(camR.create_preview_configuration(raw=config))
     camL.configure(camL.create_preview_configuration(raw=config))
     camR.start(show_preview=False)
@@ -105,7 +105,7 @@ def process_depth(frame_queue, data, focalLength, baselineLength):
             depth_map = depth(frameL, frameR, data, focalLength, baselineLength)
             heat_map = apply_heatmap(depth_map)
             last_time, fps = compute_fps(last_time)
-            cv.putText(heat_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 4, cv.LINE_AA)
+            cv.putText(heat_map, f"FPS: {fps:.2f}", (20, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 4, cv.LINE_AA)
             cv.imshow("Depth Map", heat_map)
             if cv.waitKey(1) == ord('q'):
                 stop_event.set()
